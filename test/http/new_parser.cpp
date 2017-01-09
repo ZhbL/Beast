@@ -7,6 +7,7 @@
 
 #include <beast/unit_test/suite.hpp>
 #include <beast/test/string_istream.hpp>
+#include <beast/test/string_ostream.hpp>
 #include <beast/test/yield_to.hpp>
 
 #include <beast/core/error.hpp>
@@ -1317,6 +1318,7 @@ relay(
     boost::asio::yield_context yield,
     MessageTransformation const& transform)
 {
+#if 0
     using namespace beast::http;
     parser_v1<isRequest> p;
 
@@ -1389,6 +1391,7 @@ relay(
     async_write(so, sb.data(), yield[ec]);
     if(ec)
         return;
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -1475,9 +1478,43 @@ public:
         );
     }
 
+    struct transform
+    {
+        template<bool isRequest, class Fields>
+        void
+        operator()(
+            header<isRequest, Fields>& msg, error_code& ec) const
+        {
+        }
+    };
+
+    void testRelay(yield_context yield)
+    {
+        std::string const s =
+            "HTTP/1.0 200 OK\r\n"
+            "Server: test\r\n"
+            "Transfer-Encoding: chunked\r\n"
+            "\r\n"
+            "5\r\n"
+            "*****\r\n"
+            "2;a;b=1;c=\"2\"\r\n"
+            "--\r\n"
+            "0;d;e=3;f=\"4\"\r\n"
+            "Expires: never\r\n"
+            "MD5-Fingerprint: -\r\n"
+            "\r\n";
+        test::string_ostream os{get_io_service()};
+        test::string_istream is{get_io_service(), s};
+        error_code ec;
+        relay<false>(is, os, ec, yield, transform{});
+    }
+
     void run() override
     {
         testRead();
+        yield_to(std::bind(
+            &new_parser_test::testRelay,
+                this, std::placeholders::_1));
         pass();
     }
 };
