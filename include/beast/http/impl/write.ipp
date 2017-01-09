@@ -235,7 +235,7 @@ async_write(AsyncWriteStream& stream,
     static_assert(is_AsyncWriteStream<AsyncWriteStream>::value,
         "AsyncWriteStream requirements not met");
     beast::async_completion<WriteHandler,
-        void(error_code)> completion(handler);
+        void(error_code)> completion{handler};
     streambuf sb;
     detail::write_start_line(sb, msg);
     detail::write_fields(sb, msg.fields);
@@ -730,7 +730,7 @@ async_write(AsyncWriteStream& stream,
         message<isRequest, Body, Fields>>::value,
             "Writer requirements not met");
     beast::async_completion<WriteHandler,
-        void(error_code)> completion(handler);
+        void(error_code)> completion{handler};
     detail::write_op<AsyncWriteStream, decltype(completion.handler),
         isRequest, Body, Fields>{completion.handler, stream, msg};
     return completion.result.get();

@@ -196,7 +196,7 @@ async_ping(ping_data const& payload, WriteHandler&& handler)
         "AsyncStream requirements requirements not met");
     beast::async_completion<
         WriteHandler, void(error_code)
-            > completion(handler);
+            > completion{handler};
     ping_op<decltype(completion.handler)>{
         completion.handler, *this,
             opcode::ping, payload};
@@ -214,7 +214,7 @@ async_pong(ping_data const& payload, WriteHandler&& handler)
         "AsyncStream requirements requirements not met");
     beast::async_completion<
         WriteHandler, void(error_code)
-            > completion(handler);
+            > completion{handler};
     ping_op<decltype(completion.handler)>{
         completion.handler, *this,
             opcode::pong, payload};
