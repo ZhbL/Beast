@@ -1,3 +1,9 @@
+1.0.0-b23
+
+* Split out and rename test stream classes
+
+--------------------------------------------------------------------------------
+
 1.0.0-b22
 
 * Fix broken Intellisense
