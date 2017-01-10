@@ -306,6 +306,8 @@ parse_hex(char const*& it, Unsigned& v)
     return true;
 }
 
+//------------------------------------------------------------------------------
+
 template<bool isRequest, class Derived>
 class new_basic_parser_v1 : private new_basic_parser_v1_base
 {
@@ -318,9 +320,9 @@ class new_basic_parser_v1 : private new_basic_parser_v1_base
     static unsigned constexpr flagFinalChunk = 64;
     static unsigned constexpr flagSkipBody = 128;
 
-    std::uint64_t length_ =
+    std::uint64_t len_ =
         (std::numeric_limits<std::uint64_t>::max)();
-    std::size_t skip_ = 0; // this could be a std::uint32_t
+    std::uint32_t skip_ = 0;
     std::uint8_t f_ = 0;
 
 public:
@@ -341,7 +343,7 @@ public:
     {
         if(! (f_ & flagContentLength))
             return boost::none;
-        return length_;
+        return len_;
     }
 
     /** Returns `true` if the message body is chunk encoded.
@@ -360,7 +362,7 @@ public:
     remain() const
     {
         if(f_ & (flagContentLength | flagChunked))
-            return length_;
+            return len_;
         return 65536;
     }
 
@@ -410,7 +412,7 @@ public:
     {
         using boost::asio::buffer_copy;
         auto const n = beast::detail::clamp(
-            length_,  buffer.size());
+            len_,  buffer.size());
         auto const b = r.prepare(n, ec);
         if(ec)
             return;
@@ -422,13 +424,13 @@ public:
         buffer.consume(len);
         if(f_ & flagContentLength)
         {
-            length_ -= len;
-            if(length_ == 0)
+            len_ -= len;
+            if(len_ == 0)
                 f_ |= flagComplete;
         }
         else if(f_ & flagChunked)
         {
-            length_ -= len;
+            len_ -= len;
         }
     }
 
@@ -437,7 +439,7 @@ public:
     void
     consume(std::uint64_t n)
     {
-        length_ -= n;
+        len_ -= n;
     }
 
 private:
@@ -804,7 +806,7 @@ private:
                 ec = error::bad_content_length;
                 return;
             }
-            length_ = v;
+            len_ = v;
             f_ |= flagContentLength;
             return;
         }
@@ -993,7 +995,7 @@ private:
                     ec = error::bad_chunk_size;
                     return;
                 }
-                length_ = v;
+                len_ = v;
                 f_ |= flagNextChunk;
                 buffer.consume(static_cast<
                     std::size_t>(m.second - first));
@@ -1051,15 +1053,19 @@ class new_parser_v1
     : public new_basic_parser_v1<isRequest,
         new_parser_v1<isRequest, Body, Fields>>
 {
-    message<isRequest, Body, Fields> m_;
+    message<isRequest, Body, Fields>& m_;
 
 public:
     /// The type of message this parser produces.
     using message_type =
         message<isRequest, Body, Fields>;
 
-    /// Default constructor
-    new_parser_v1() = default;
+    // Constructor
+    new_parser_v1(
+            message<isRequest, Body, Fields>& m)
+        : m_(m)
+    {
+    }
 
     /// Copy constructor (disallowed)
     new_parser_v1(new_parser_v1 const&) = delete;
@@ -1088,22 +1094,6 @@ public:
     get()
     {
         return m_;
-    }
-
-    /** Returns ownership of the parsed message.
-
-        Ownership is transferred to the caller. Only
-        valid if @ref complete would return `true`.
-
-        Requires:
-            `message<isRequest, Body, Fields>` is @b MoveConstructible
-    */
-    message_type
-    release()
-    {
-        static_assert(std::is_move_constructible<decltype(m_)>::value,
-            "MoveConstructible requirements not met");
-        return std::move(m_);
     }
 
 private:

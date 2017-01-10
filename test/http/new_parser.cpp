@@ -79,7 +79,7 @@ read(SyncReadStream& stream, parse_buffer& buffer,
 {
     using boost::asio::buffer_copy;
 
-    new_parser_v1<isRequest, Body, Fields> p;
+    new_parser_v1<isRequest, Body, Fields> p{msg};
 
     // Read and parse header
     for(;;)
@@ -156,7 +156,6 @@ read(SyncReadStream& stream, parse_buffer& buffer,
     r.finish(ec);
     if(ec)
         return;
-    msg = p.release();
 }
 
 /// Efficiently relay one HTTP message between two peers
