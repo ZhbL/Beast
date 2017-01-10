@@ -79,7 +79,7 @@ read(SyncReadStream& stream, parse_buffer& buffer,
 {
     using boost::asio::buffer_copy;
 
-    new_parser_v1<isRequest, Body, Fields> p{msg};
+    new_parser_v1<isRequest, Fields> p{msg};
 
     // Read and parse header
     for(;;)
@@ -98,7 +98,7 @@ read(SyncReadStream& stream, parse_buffer& buffer,
         buffer.commit(bytes_transferred);
     }
 
-    typename Body::reader r{p.get(), p.content_length()};
+    typename Body::reader r{msg, p.content_length()};
 
     // Read and parse body
     while(! p.complete())

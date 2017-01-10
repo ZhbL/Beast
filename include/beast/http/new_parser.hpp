@@ -1048,21 +1048,21 @@ private:
 
 //------------------------------------------------------------------------------
 
-template<bool isRequest, class Body, class Fields>
+template<bool isRequest, class Fields>
 class new_parser_v1
     : public new_basic_parser_v1<isRequest,
-        new_parser_v1<isRequest, Body, Fields>>
+        new_parser_v1<isRequest, Fields>>
 {
-    message<isRequest, Body, Fields>& m_;
+    header<isRequest, Fields>& m_;
 
 public:
-    /// The type of message this parser produces.
-    using message_type =
-        message<isRequest, Body, Fields>;
+    /// The type of header this parser produces.
+    using header_type =
+        header<isRequest, Fields>;
 
     // Constructor
     new_parser_v1(
-            message<isRequest, Body, Fields>& m)
+            header<isRequest, Fields>& m)
         : m_(m)
     {
     }
@@ -1076,21 +1076,21 @@ public:
     /// Copy assignment (disallowed)
     new_parser_v1& operator=(new_parser_v1 const&) = delete;
 
-    /** Returns the parsed message.
+    /** Returns the parsed header.
 
         Only valid if @ref complete would return `true`.
     */
-    message_type const&
+    header_type const&
     get() const
     {
         return m_;
     }
 
-    /** Returns the parsed message.
+    /** Returns the parsed header.
 
         Only valid if @ref complete would return `true`.
     */
-    message_type&
+    header_type&
     get()
     {
         return m_;
